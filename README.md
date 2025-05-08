@@ -65,7 +65,10 @@ To run the AI Resume Builder locally, follow these steps:
    yarn start
    ```
 
-   The application should now be accessible at [http://localhost:3000](https://ai-resume-builder-idebow0ct-juniorsillos-projects.vercel.app)).
+## 🌐 Live Demo
+
+[Click here to view the live website](https://ai-resume-builder-idebow0ct-juniorsillos-projects.vercel.app)
+
 
 ---
 
