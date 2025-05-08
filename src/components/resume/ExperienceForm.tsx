@@ -320,16 +320,14 @@ export function ExperienceForm() {
                     size="sm"
                     onClick={enhanceWithAI}
                     disabled={enhancingDescription || !form.getValues("position")}
-                    className="h-8"
                   >
-                    <Sparkles className="mr-2 h-4 w-4" />
                     {enhancingDescription ? "Enhancing..." : "Enhance with AI"}
                   </Button>
                 </div>
                 <FormControl>
                   <Textarea
-                    placeholder="Describe your role and responsibilities..."
-                    className="min-h-[80px]"
+                    placeholder="Describe your responsibilities"
+                    rows={5}
                     {...field}
                   />
                 </FormControl>
@@ -338,122 +336,50 @@ export function ExperienceForm() {
             )}
           />
 
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <FormLabel>Key Achievements & Responsibilities</FormLabel>
-            </div>
-            <div className="flex items-center mb-4">
-              <Input
-                placeholder="Add bullet points highlighting your achievements..."
-                value={newHighlight}
-                onChange={(e) => setNewHighlight(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addHighlight();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={addHighlight}
-                disabled={!newHighlight.trim()}
-                className="ml-2"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {form.getValues("highlights")?.map((highlight, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between bg-muted/50 p-2 rounded-md"
+          <div className="space-y-4">
+            <div>
+              <FormLabel>Key Highlights</FormLabel>
+              <div className="flex gap-2">
+                <Input
+                  value={newHighlight}
+                  onChange={(e) => setNewHighlight(e.target.value)}
+                  placeholder="Highlight (e.g., Managed a team)"
+                />
+                <Button
+                  variant="default"
+                  onClick={addHighlight}
+                  disabled={!newHighlight}
+                  className="text-sm"
                 >
-                  <span className="text-sm">• {highlight}</span>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <ul className="list-inside pl-4 space-y-1">
+              {form.getValues("highlights").map((highlight, index) => (
+                <li key={index} className="flex justify-between items-center">
+                  <Badge variant="outline">{highlight}</Badge>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
+                    className="ml-2"
                     onClick={() => removeHighlight(index)}
-                    className="h-6 w-6 text-muted-foreground hover:text-foreground"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="w-4 h-4" />
                   </Button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          <div className="flex justify-end">
+          <CardFooter>
             <Button type="submit">
-              {editingExperience ? "Update Experience" : "Add Experience"}
+              {editingExperience ? "Save Changes" : "Add Experience"}
             </Button>
-          </div>
+          </CardFooter>
         </form>
       </Form>
-
-      <div className="mt-8">
-        <h3 className="text-lg font-medium mb-4">Work Experience</h3>
-        {activeResume?.experiences && activeResume.experiences.length > 0 ? (
-          <div className="space-y-4">
-            {activeResume.experiences.map((experience) => (
-              <Card key={experience.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-lg">{experience.position}</CardTitle>
-                      <CardDescription>
-                        {experience.company}{" "}
-                        {experience.location && `• ${experience.location}`}
-                      </CardDescription>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => editExperience(experience)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteExperience(experience.id)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground mb-2">
-                    {experience.startDate} - {experience.current ? "Present" : experience.endDate}
-                  </div>
-                  {experience.description && (
-                    <p className="text-sm mb-2">{experience.description}</p>
-                  )}
-                  {experience.highlights && experience.highlights.length > 0 && (
-                    <ul className="text-sm space-y-1 list-disc list-inside">
-                      {experience.highlights.map((highlight, index) => (
-                        <li key={index}>{highlight}</li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center p-4 border border-dashed rounded-lg text-muted-foreground">
-            No experience added yet. Add your work experience to enhance your resume.
-          </div>
-        )}
-      </div>
     </div>
   );
 }
