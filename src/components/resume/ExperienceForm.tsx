@@ -1,3 +1,5 @@
+// src/components/resume/ExperienceForm.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -30,14 +32,15 @@ import { generateUniqueId, suggestJobDescription } from "@/lib/utils";
 import { toast } from "sonner";
 import { Experience } from "@/lib/types";
 
+// Updated Zod schema: make description required
 const experienceSchema = z.object({
   company: z.string().min(1, "Company name is required"),
   position: z.string().min(1, "Position is required"),
   startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string(), // Changed from z.string().optional()
+  endDate: z.string(),
   current: z.boolean().optional(),
   location: z.string().optional(),
-  description: z.string().optional(),
+  description: z.string(), // Changed from z.string().optional()
   highlights: z.array(z.string()),
 });
 
@@ -62,7 +65,7 @@ export function ExperienceForm() {
       endDate: "",
       current: false,
       location: "",
-      description: "",
+      description: "", // Ensure default is an empty string
       highlights: [],
     },
   });
@@ -102,7 +105,7 @@ export function ExperienceForm() {
         endDate: "",
         current: false,
         location: "",
-        description: "",
+        description: "", // Reset to empty string
         highlights: [],
       });
       setEditingExperience(null);
@@ -134,7 +137,7 @@ export function ExperienceForm() {
       endDate: experience.endDate,
       current: experience.current,
       location: experience.location || "",
-      description: experience.description,
+      description: experience.description, // Should always be a string
       highlights: experience.highlights,
     });
   }
@@ -158,7 +161,7 @@ export function ExperienceForm() {
       endDate: "",
       current: false,
       location: "",
-      description: "",
+      description: "", // Reset to empty string
       highlights: [],
     });
   }
