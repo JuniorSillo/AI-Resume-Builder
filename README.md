@@ -133,6 +133,8 @@ For any inquiries or support, please feel free to reach out at:
 
 * Email: sillojunior8@gmail.com
 * GitHub: [https://github.com/JuniorSillo](https://github.com/JuniorSillo)
+* LinkedIn: [www.linkedin.com/in/moeketsi-junior-sillo-726073244](https://www.linkedin.com/in/moeketsi-junior-sillo-726073244)
+
 
 ---
 
