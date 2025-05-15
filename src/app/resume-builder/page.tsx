@@ -31,35 +31,51 @@ interface PersonalInfo {
 }
 
 interface Experience {
-  title?: string;
-  company?: string;
-  startDate?: string;
-  endDate?: string;
-  description?: string;
+  id: string;
+  company: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  current?: boolean;
+  location?: string;
+  description: string;
+  highlights: string[];
 }
 
 interface Education {
-  degree?: string;
-  institution?: string;
-  startDate?: string;
-  endDate?: string;
+  id: string;
+  institution: string;
+  degree: string;
+  fieldOfStudy?: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  description?: string;
 }
 
 interface Skill {
+  id: string;
   name: string;
-  level?: string;
+  level: number;
+  category?: string;
 }
 
 interface Project {
-  title?: string;
-  description?: string;
+  id: string;
+  name: string;
+  description: string;
+  technologies: string[];
+  url?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface Resume {
   id: string;
   title?: string;
+  templateColor?: string;
   personalInfo: PersonalInfo;
-  experience?: Experience[];
+  experiences?: Experience[];
   education?: Education[];
   skills?: Skill[];
   projects?: Project[];
@@ -117,6 +133,14 @@ export default function ResumeBuilder() {
       yOffset += 8;
       doc.text(activeResume.personalInfo.location || "Location", 20, yOffset);
       yOffset += 8;
+      if (activeResume.personalInfo.linkedIn) {
+        doc.text(`LinkedIn: ${activeResume.personalInfo.linkedIn}`, 20, yOffset);
+        yOffset += 8;
+      }
+      if (activeResume.personalInfo.website) {
+        doc.text(`Website: ${activeResume.personalInfo.website}`, 20, yOffset);
+        yOffset += 8;
+      }
       doc.text(activeResume.personalInfo.jobTitle || "Job Title", 20, yOffset);
       yOffset += 12;
       if (activeResume.personalInfo.summary) {
@@ -128,18 +152,29 @@ export default function ResumeBuilder() {
     }
 
     // Add Experience
-    if (activeResume?.experience?.length) {
+    if (activeResume?.experiences?.length) {
       doc.setFontSize(14);
       doc.text("Experience", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      activeResume.experience.forEach((exp) => {
-        doc.text(`${exp.title || "Position"} at ${exp.company || "Company"}`, 20, yOffset);
+      activeResume.experiences.forEach((exp) => {
+        doc.text(`${exp.position || "Position"} at ${exp.company || "Company"}`, 20, yOffset);
         yOffset += 7;
-        doc.text(`${exp.startDate || "Start"} - ${exp.endDate || "Present"}`, 20, yOffset);
+        doc.text(`${exp.startDate || "Start"} - ${exp.current ? "Present" : exp.endDate || "End"}`, 20, yOffset);
         yOffset += 7;
+        if (exp.location) {
+          doc.text(exp.location, 20, yOffset);
+          yOffset += 7;
+        }
         doc.text(exp.description || "", 20, yOffset, { maxWidth: 170 });
-        yOffset += 15;
+        yOffset += 10;
+        if (exp.highlights?.length) {
+          exp.highlights.forEach((highlight) => {
+            doc.text(`• ${highlight}`, 25, yOffset, { maxWidth: 165 });
+            yOffset += 7;
+          });
+        }
+        yOffset += 10;
       });
       yOffset += 10;
     }
@@ -151,10 +186,20 @@ export default function ResumeBuilder() {
       yOffset += 10;
       doc.setFontSize(12);
       activeResume.education.forEach((edu) => {
-        doc.text(`${edu.degree || "Degree"}, ${edu.institution || "Institution"}`, 20, yOffset);
+        const degreeLine = `${edu.degree || "Degree"}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}, ${edu.institution || "Institution"}`;
+        doc.text(degreeLine, 20, yOffset, { maxWidth: 170 });
         yOffset += 7;
         doc.text(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, 20, yOffset);
-        yOffset += 15;
+        yOffset += 7;
+        if (edu.location) {
+          doc.text(edu.location, 20, yOffset);
+          yOffset += 7;
+        }
+        if (edu.description) {
+          doc.text(edu.description, 20, yOffset, { maxWidth: 170 });
+          yOffset += 10;
+        }
+        yOffset += 10;
       });
       yOffset += 10;
     }
@@ -165,9 +210,22 @@ export default function ResumeBuilder() {
       doc.text("Skills", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      const skillsText = activeResume.skills.map((skill) => skill.name).join(", ");
-      doc.text(skillsText || "No skills listed", 20, yOffset, { maxWidth: 170 });
-      yOffset += 20;
+      const skillsByCategory: Record<string, Skill[]> = {};
+      activeResume.skills.forEach((skill) => {
+        const category = skill.category || "Other";
+        if (!skillsByCategory[category]) {
+          skillsByCategory[category] = [];
+        }
+        skillsByCategory[category].push(skill);
+      });
+      Object.entries(skillsByCategory).forEach(([category, skills]) => {
+        doc.text(category, 20, yOffset);
+        yOffset += 7;
+        const skillsText = skills.map((skill) => `${skill.name} (${skill.level}/5)`).join(", ");
+        doc.text(skillsText || "No skills listed", 25, yOffset, { maxWidth: 165 });
+        yOffset += 10;
+      });
+      yOffset += 10;
     }
 
     // Add Projects
@@ -177,10 +235,24 @@ export default function ResumeBuilder() {
       yOffset += 10;
       doc.setFontSize(12);
       activeResume.projects.forEach((project) => {
-        doc.text(project.title || "Project", 20, yOffset);
+        doc.text(project.name || "Project", 20, yOffset);
         yOffset += 7;
+        if (project.startDate || project.endDate) {
+          const dateText = `${project.startDate || ""}${project.startDate && project.endDate ? " - " : ""}${project.endDate || ""}`;
+          doc.text(dateText, 20, yOffset);
+          yOffset += 7;
+        }
         doc.text(project.description || "", 20, yOffset, { maxWidth: 170 });
-        yOffset += 15;
+        yOffset += 10;
+        if (project.technologies?.length) {
+          doc.text(`Technologies: ${project.technologies.join(", ")}`, 20, yOffset);
+          yOffset += 7;
+        }
+        if (project.url) {
+          doc.text(`URL: ${project.url}`, 20, yOffset);
+          yOffset += 7;
+        }
+        yOffset += 10;
       });
     }
 
