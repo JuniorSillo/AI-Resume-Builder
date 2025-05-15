@@ -60,6 +60,7 @@ export interface PersonalInfo {
   email: string;
   phone?: string;
   linkedIn?: string;
+  github?: string;
   website?: string;
   location?: string;
   summary?: string;
