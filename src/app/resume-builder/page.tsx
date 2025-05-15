@@ -97,7 +97,8 @@ export default function ResumeBuilder() {
       activeResume.experiences.forEach((exp) => {
         doc.text(`${exp.position || "Position"} at ${exp.company || "Company"}`, 20, yOffset);
         yOffset += 7;
-        doc.text(`${exp.startDate || "Start"} - ${exp.current ? "Present" : exp.endDate || "End"}`, 20, yOffset);
+        const dateText = exp.current ? `${exp.startDate || "Start"} - Present` : `${exp.startDate || "Start"} - ${exp.endDate || "End"}`;
+        doc.text(dateText, 20, yOffset);
         yOffset += 7;
         if (exp.location) {
           doc.text(exp.location, 20, yOffset);
