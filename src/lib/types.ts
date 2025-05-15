@@ -15,7 +15,7 @@ export interface Experience {
   company: string;
   position: string;
   startDate: string;
-  endDate: string;
+  endDate?: string; // Changed to optional
   current?: boolean;
   location?: string;
   description: string;
@@ -25,7 +25,7 @@ export interface Experience {
 export interface Skill {
   id: string;
   name: string;
-  level?: number; // 1-5 for expertise level
+  level?: number;
   category?: string;
 }
 
@@ -143,7 +143,7 @@ export interface Interview {
   type: 'Phone' | 'Video' | 'In-person' | 'Technical' | 'Other';
   date: string;
   time: string;
-  duration?: number; // In minutes
+  duration?: number;
   location?: string;
   interviewers?: string[];
   notes?: string;
@@ -202,7 +202,7 @@ export interface VideoResume {
   resumeId: string;
   title: string;
   url: string;
-  duration: number; // In seconds
+  duration: number;
   createdAt: string;
   transcription?: string;
 }
