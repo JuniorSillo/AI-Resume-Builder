@@ -17,14 +17,57 @@ import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 
+// Define interfaces for resume data
+interface PersonalInfo {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  linkedIn?: string;
+  website?: string;
+  location?: string;
+  jobTitle?: string;
+  summary?: string;
+}
+
+interface Experience {
+  title?: string;
+  company?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+}
+
+interface Education {
+  degree?: string;
+  institution?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+interface Project {
+  title?: string;
+  description?: string;
+}
+
+interface Resume {
+  id: string;
+  title?: string;
+  personalInfo: PersonalInfo;
+  experience?: Experience[];
+  education?: Education[];
+  skills?: string[];
+  projects?: Project[];
+}
+
 export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState("personal-info");
   const [previewMode, setPreviewMode] = useState(false);
 
   const router = useRouter();
-  const resumes = useAppStore(state => state.resumes);
-  const activeResumeId = useAppStore(state => state.activeResumeId);
-  const activeResume = resumes.find(r => r.id === activeResumeId);
+  const resumes = useAppStore((state: { resumes: Resume[] }) => state.resumes);
+  const activeResumeId = useAppStore((state: { activeResumeId: string }) => state.activeResumeId);
+  const activeResume = resumes.find((r) => r.id === activeResumeId);
 
   const tabs = [
     { id: "personal-info", label: "Personal Info", component: <PersonalInfoForm /> },
@@ -36,7 +79,7 @@ export default function ResumeBuilder() {
     { id: "analysis", label: "AI Analysis", component: <ResumeAnalysis /> },
   ];
 
-  const currentTabIndex = tabs.findIndex(tab => tab.id === activeTab);
+  const currentTabIndex = tabs.findIndex((tab) => tab.id === activeTab);
 
   const handleNext = () => {
     if (currentTabIndex < tabs.length - 1) {
@@ -59,15 +102,24 @@ export default function ResumeBuilder() {
     // Add Personal Info
     if (activeResume?.personalInfo) {
       doc.setFontSize(16);
-      doc.text(activeResume.personalInfo.name || "Name", 20, yOffset);
+      const fullName = `${activeResume.personalInfo.firstName || ""} ${activeResume.personalInfo.lastName || ""}`.trim();
+      doc.text(fullName || "Name", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
       doc.text(activeResume.personalInfo.email || "Email", 20, yOffset);
-      yOffset += 10;
+      yOffset += 8;
       doc.text(activeResume.personalInfo.phone || "Phone", 20, yOffset);
-      yOffset += 10;
-      doc.text(activeResume.personalInfo.address || "Address", 20, yOffset);
-      yOffset += 20;
+      yOffset += 8;
+      doc.text(activeResume.personalInfo.location || "Location", 20, yOffset);
+      yOffset += 8;
+      doc.text(activeResume.personalInfo.jobTitle || "Job Title", 20, yOffset);
+      yOffset += 12;
+      if (activeResume.personalInfo.summary) {
+        doc.text("Summary", 20, yOffset);
+        yOffset += 8;
+        doc.text(activeResume.personalInfo.summary, 20, yOffset, { maxWidth: 170 });
+        yOffset += 20;
+      }
     }
 
     // Add Experience
@@ -76,10 +128,10 @@ export default function ResumeBuilder() {
       doc.text("Experience", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      activeResume.experience.forEach(exp => {
-        doc.text(`${exp.title} at ${exp.company}`, 20, yOffset);
+      activeResume.experience.forEach((exp) => {
+        doc.text(`${exp.title || "Position"} at ${exp.company || "Company"}`, 20, yOffset);
         yOffset += 7;
-        doc.text(`${exp.startDate} - ${exp.endDate || "Present"}`, 20, yOffset);
+        doc.text(`${exp.startDate || "Start"} - ${exp.endDate || "Present"}`, 20, yOffset);
         yOffset += 7;
         doc.text(exp.description || "", 20, yOffset, { maxWidth: 170 });
         yOffset += 15;
@@ -93,10 +145,10 @@ export default function ResumeBuilder() {
       doc.text("Education", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      activeResume.education.forEach(edu => {
-        doc.text(`${edu.degree}, ${edu.institution}`, 20, yOffset);
+      activeResume.education.forEach((edu) => {
+        doc.text(`${edu.degree || "Degree"}, ${edu.institution || "Institution"}`, 20, yOffset);
         yOffset += 7;
-        doc.text(`${edu.startDate} - ${edu.endDate || "Present"}`, 20, yOffset);
+        doc.text(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, 20, yOffset);
         yOffset += 15;
       });
       yOffset += 10;
@@ -118,8 +170,8 @@ export default function ResumeBuilder() {
       doc.text("Projects", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      activeResume.projects.forEach(project => {
-        doc.text(project.title, 20, yOffset);
+      activeResume.projects.forEach((project) => {
+        doc.text(project.title || "Project", 20, yOffset);
         yOffset += 7;
         doc.text(project.description || "", 20, yOffset, { maxWidth: 170 });
         yOffset += 15;
@@ -169,14 +221,14 @@ export default function ResumeBuilder() {
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-8 w-full max-w-full overflow-auto grid grid-cols-3 md:grid-cols-7">
-                  {tabs.map(tab => (
+                  {tabs.map((tab) => (
                     <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2">
                       {tab.label}
                     </TabsTrigger>
                   ))}
                 </TabsList>
 
-                {tabs.map(tab => (
+                {tabs.map((tab) => (
                   <TabsContent key={tab.id} value={tab.id} className="p-1">
                     {tab.component}
                   </TabsContent>
@@ -228,7 +280,7 @@ export default function ResumeBuilder() {
                 </div>
 
                 <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md border border-blue-200 dark:border-blue-900">
-                  <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                  <p className="text-sm Novembre font-medium text-blue-700 dark:text-blue-400">
                     Try the "Modern" template
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-500">
@@ -252,14 +304,18 @@ export default function ResumeBuilder() {
               <div className="space-y-3">
                 {tabs.map((tab, index) => (
                   <div key={tab.id} className="flex items-center">
-                    <div className={`w-5 h-5 rounded-full mr-2 flex items-center justify-center ${
-                      index <= currentTabIndex ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
-                    }`}>
+                    <div
+                      className={`w-5 h-5 rounded-full mr-2 flex items-center justify-center ${
+                        index <= currentTabIndex ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
+                      }`}
+                    >
                       {index < currentTabIndex ? "✓" : index + 1}
                     </div>
-                    <span className={`text-sm ${
-                      index === currentTabIndex ? "font-medium" : "text-muted-foreground"
-                    }`}>
+                    <span
+                      className={`text-sm ${
+                        index === currentTabIndex ? "font-medium" : "text-muted-foreground"
+                      }`}
+                    >
                       {tab.label}
                     </span>
                   </div>
