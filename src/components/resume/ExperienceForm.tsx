@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useAppStore } from "@/lib/store";
 import { Experience } from "@/lib/types";
@@ -18,7 +17,7 @@ const experienceSchema = z.object({
   company: z.string().min(1, "Company is required"),
   position: z.string().min(1, "Position is required"),
   startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().optional(), // Optional, but validated below
+  endDate: z.string().optional(),
   current: z.boolean().optional(),
   location: z.string().optional(),
   description: z.string().min(1, "Description is required"),
@@ -38,7 +37,7 @@ export function ExperienceForm() {
 
   const activeResume = resumes.find((r) => r.id === activeResumeId);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ExperienceFormData>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ExperienceFormData>({
     resolver: zodResolver(experienceSchema),
     defaultValues: {
       company: "",
@@ -52,6 +51,8 @@ export function ExperienceForm() {
     },
   });
 
+  const isCurrent = watch("current");
+
   const onSubmit = (data: ExperienceFormData) => {
     if (!activeResume) return;
 
@@ -63,7 +64,7 @@ export function ExperienceForm() {
         experiences[index] = {
           ...data,
           id: editingExperience.id,
-          endDate: data.current ? undefined : data.endDate, // Set endDate to undefined for current jobs
+          endDate: data.current ? undefined : data.endDate,
           highlights: data.highlights || [],
         };
       }
@@ -122,12 +123,23 @@ export function ExperienceForm() {
 
           <div>
             <Label htmlFor="endDate">End Date</Label>
-            <Input id="endDate" type="text" {...register("endDate")} placeholder="MM/YYYY" disabled={!!register("current").value} />
+            <Input
+              id="endDate"
+              type="text"
+              {...register("endDate")}
+              placeholder="MM/YYYY"
+              disabled={isCurrent}
+            />
             {errors.endDate && <p className="text-red-500 text-sm">{errors.endDate.message}</p>}
           </div>
 
           <div className="flex items-center space-x-2">
-            <Checkbox id="current" {...register("current")} />
+            <input
+              type="checkbox"
+              id="current"
+              {...register("current")}
+              className="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary"
+            />
             <Label htmlFor="current">Current Job</Label>
           </div>
 
