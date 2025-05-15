@@ -16,70 +16,7 @@ import { ResumePreview } from "@/components/resume/ResumePreview";
 import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
-
-// Define interfaces for resume data
-interface PersonalInfo {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  linkedIn?: string;
-  website?: string;
-  location?: string;
-  jobTitle?: string;
-  summary?: string;
-}
-
-interface Experience {
-  id: string;
-  company: string;
-  position: string;
-  startDate: string;
-  endDate: string;
-  current?: boolean;
-  location?: string;
-  description: string;
-  highlights: string[];
-}
-
-interface Education {
-  id: string;
-  institution: string;
-  degree: string;
-  fieldOfStudy?: string;
-  startDate: string;
-  endDate: string;
-  location?: string;
-  description?: string;
-}
-
-interface Skill {
-  id: string;
-  name: string;
-  level: number;
-  category?: string;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  technologies: string[];
-  url?: string;
-  startDate?: string;
-  endDate?: string;
-}
-
-interface Resume {
-  id: string;
-  title?: string;
-  templateColor?: string;
-  personalInfo: PersonalInfo;
-  experiences?: Experience[];
-  education?: Education[];
-  skills?: Skill[];
-  projects?: Project[];
-}
+import { Resume, PersonalInfo, Experience, Education, Skill, Project, Certificate, Language } from "@/lib/types";
 
 export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState("personal-info");
@@ -221,7 +158,9 @@ export default function ResumeBuilder() {
       Object.entries(skillsByCategory).forEach(([category, skills]) => {
         doc.text(category, 20, yOffset);
         yOffset += 7;
-        const skillsText = skills.map((skill) => `${skill.name} (${skill.level}/5)`).join(", ");
+        const skillsText = skills
+          .map((skill) => `${skill.name}${skill.level ? ` (${skill.level}/5)` : ""}`)
+          .join(", ");
         doc.text(skillsText || "No skills listed", 25, yOffset, { maxWidth: 165 });
         yOffset += 10;
       });
@@ -254,6 +193,44 @@ export default function ResumeBuilder() {
         }
         yOffset += 10;
       });
+      yOffset += 10;
+    }
+
+    // Add Certificates
+    if (activeResume?.certificates?.length) {
+      doc.setFontSize(14);
+      doc.text("Certifications", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      activeResume.certificates.forEach((cert) => {
+        doc.text(`${cert.name || "Certificate"} - ${cert.issuer || "Issuer"}`, 20, yOffset);
+        yOffset += 7;
+        doc.text(`Issued: ${cert.issueDate || "Unknown"}`, 20, yOffset);
+        yOffset += 7;
+        if (cert.expiryDate) {
+          doc.text(`Expires: ${cert.expiryDate}`, 20, yOffset);
+          yOffset += 7;
+        }
+        if (cert.credentialUrl) {
+          doc.text(`Credential URL: ${cert.credentialUrl}`, 20, yOffset);
+          yOffset += 7;
+        }
+        yOffset += 10;
+      });
+      yOffset += 10;
+    }
+
+    // Add Languages
+    if (activeResume?.languages?.length) {
+      doc.setFontSize(14);
+      doc.text("Languages", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      const languagesText = activeResume.languages
+        .map((lang) => `${lang.name} (${lang.proficiency})`)
+        .join(", ");
+      doc.text(languagesText || "No languages listed", 20, yOffset, { maxWidth: 170 });
+      yOffset += 10;
     }
 
     // Save the PDF
