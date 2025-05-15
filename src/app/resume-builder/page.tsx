@@ -45,6 +45,11 @@ interface Education {
   endDate?: string;
 }
 
+interface Skill {
+  name: string;
+  level?: string;
+}
+
 interface Project {
   title?: string;
   description?: string;
@@ -56,7 +61,7 @@ interface Resume {
   personalInfo: PersonalInfo;
   experience?: Experience[];
   education?: Education[];
-  skills?: string[];
+  skills?: Skill[];
   projects?: Project[];
 }
 
@@ -65,8 +70,8 @@ export default function ResumeBuilder() {
   const [previewMode, setPreviewMode] = useState(false);
 
   const router = useRouter();
-  const resumes = useAppStore((state: { resumes: Resume[] }) => state.resumes);
-  const activeResumeId = useAppStore((state: { activeResumeId: string }) => state.activeResumeId);
+  const resumes = useAppStore((state) => state.resumes);
+  const activeResumeId = useAppStore((state) => state.activeResumeId);
   const activeResume = resumes.find((r) => r.id === activeResumeId);
 
   const tabs = [
@@ -160,7 +165,8 @@ export default function ResumeBuilder() {
       doc.text("Skills", 20, yOffset);
       yOffset += 10;
       doc.setFontSize(12);
-      doc.text(activeResume.skills.join(", "), 20, yOffset, { maxWidth: 170 });
+      const skillsText = activeResume.skills.map((skill) => skill.name).join(", ");
+      doc.text(skillsText || "No skills listed", 20, yOffset, { maxWidth: 170 });
       yOffset += 20;
     }
 
@@ -280,7 +286,7 @@ export default function ResumeBuilder() {
                 </div>
 
                 <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md border border-blue-200 dark:border-blue-900">
-                  <p className="text-sm Novembre font-medium text-blue-700 dark:text-blue-400">
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
                     Try the "Modern" template
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-500">
