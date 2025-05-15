@@ -15,6 +15,7 @@ import { TemplateSelector } from "@/components/resume/TemplateSelector";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { useRouter } from "next/navigation";
+import jsPDF from "jspdf";
 
 export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState("personal-info");
@@ -41,7 +42,6 @@ export default function ResumeBuilder() {
     if (currentTabIndex < tabs.length - 1) {
       setActiveTab(tabs[currentTabIndex + 1].id);
     } else {
-      // If we're on the last tab, go to the preview
       setPreviewMode(true);
     }
   };
@@ -53,8 +53,81 @@ export default function ResumeBuilder() {
   };
 
   const handleExport = () => {
-    // This would be implemented with actual export functionality
-    alert("Resume exported successfully!");
+    const doc = new jsPDF();
+    let yOffset = 20;
+
+    // Add Personal Info
+    if (activeResume?.personalInfo) {
+      doc.setFontSize(16);
+      doc.text(activeResume.personalInfo.name || "Name", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      doc.text(activeResume.personalInfo.email || "Email", 20, yOffset);
+      yOffset += 10;
+      doc.text(activeResume.personalInfo.phone || "Phone", 20, yOffset);
+      yOffset += 10;
+      doc.text(activeResume.personalInfo.address || "Address", 20, yOffset);
+      yOffset += 20;
+    }
+
+    // Add Experience
+    if (activeResume?.experience?.length) {
+      doc.setFontSize(14);
+      doc.text("Experience", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      activeResume.experience.forEach(exp => {
+        doc.text(`${exp.title} at ${exp.company}`, 20, yOffset);
+        yOffset += 7;
+        doc.text(`${exp.startDate} - ${exp.endDate || "Present"}`, 20, yOffset);
+        yOffset += 7;
+        doc.text(exp.description || "", 20, yOffset, { maxWidth: 170 });
+        yOffset += 15;
+      });
+      yOffset += 10;
+    }
+
+    // Add Education
+    if (activeResume?.education?.length) {
+      doc.setFontSize(14);
+      doc.text("Education", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      activeResume.education.forEach(edu => {
+        doc.text(`${edu.degree}, ${edu.institution}`, 20, yOffset);
+        yOffset += 7;
+        doc.text(`${edu.startDate} - ${edu.endDate || "Present"}`, 20, yOffset);
+        yOffset += 15;
+      });
+      yOffset += 10;
+    }
+
+    // Add Skills
+    if (activeResume?.skills?.length) {
+      doc.setFontSize(14);
+      doc.text("Skills", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      doc.text(activeResume.skills.join(", "), 20, yOffset, { maxWidth: 170 });
+      yOffset += 20;
+    }
+
+    // Add Projects
+    if (activeResume?.projects?.length) {
+      doc.setFontSize(14);
+      doc.text("Projects", 20, yOffset);
+      yOffset += 10;
+      doc.setFontSize(12);
+      activeResume.projects.forEach(project => {
+        doc.text(project.title, 20, yOffset);
+        yOffset += 7;
+        doc.text(project.description || "", 20, yOffset, { maxWidth: 170 });
+        yOffset += 15;
+      });
+    }
+
+    // Save the PDF
+    doc.save(`${activeResume?.title || "resume"}.pdf`);
   };
 
   if (previewMode) {
