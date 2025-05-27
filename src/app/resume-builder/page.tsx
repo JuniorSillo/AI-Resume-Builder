@@ -61,6 +61,16 @@ export default function ResumeBuilder() {
     const maxWidth = pageWidth - 2 * margin;
     let yOffset = margin;
 
+    // Helper function to clean text (fix OCR errors)
+    const cleanText = (text: string): string => {
+      return text
+        .replace(/\$(\d+%)\$/g, "$1") // Fix $35%$ → 35%
+        .replace(/metics/g, "metrics") // Fix metics → metrics
+        .replace(/residented/g, "Frontend") // Fix residented → Frontend
+        .replace(/dected/g, "Reduced") // Fix dected → Reduced
+        .trim();
+    };
+
     // Helper function to check for page overflow
     const checkPageOverflow = (additionalHeight: number) => {
       if (yOffset + additionalHeight > pageHeight - margin) {
@@ -69,41 +79,80 @@ export default function ResumeBuilder() {
       }
     };
 
-    // Helper function to add wrapped text
+    // Helper function to add wrapped text with overflow handling
     const addWrappedText = (text: string, x: number, fontSize: number, maxWidth: number, align: 'left' | 'center' = 'left') => {
       doc.setFontSize(fontSize);
-      const lines = doc.splitTextToSize(text, maxWidth);
-      checkPageOverflow(lines.length * fontSize * 0.5);
+      const cleanedText = cleanText(text);
+      const lines = doc.splitTextToSize(cleanedText, maxWidth);
+      const lineHeight = fontSize * 0.4;
+      checkPageOverflow(lines.length * lineHeight);
       lines.forEach((line: string) => {
-        const xPos = align === 'center' ? (pageWidth - doc.getTextWidth(line)) / 2 : x;
-        doc.text(line, xPos, yOffset);
-        yOffset += fontSize * 0.4;
+        const lineWidth = doc.getTextWidth(line);
+        if (lineWidth > maxWidth) {
+          // Split long lines further
+          const words = line.split(" ");
+          let currentLine = "";
+          words.forEach((word) => {
+            const testLine = currentLine ? `${currentLine} ${word}` : word;
+            if (doc.getTextWidth(testLine) <= maxWidth) {
+              currentLine = testLine;
+            } else {
+              if (currentLine) {
+                const xPos = align === 'center' ? (pageWidth - doc.getTextWidth(currentLine)) / 2 : x;
+                doc.text(currentLine, xPos, yOffset);
+                yOffset += lineHeight;
+                checkPageOverflow(lineHeight);
+              }
+              currentLine = word;
+            }
+          });
+          if (currentLine) {
+            const xPos = align === 'center' ? (pageWidth - doc.getTextWidth(currentLine)) / 2 : x;
+            doc.text(currentLine, xPos, yOffset);
+            yOffset += lineHeight;
+          }
+        } else {
+          const xPos = align === 'center' ? (pageWidth - doc.getTextWidth(line)) / 2 : x;
+          doc.text(line, xPos, yOffset);
+          yOffset += lineHeight;
+        }
       });
+      return yOffset;
     };
 
     // Set default font
-    doc.setFont(activeResume?.templateFont || "helvetica", "normal");
+    const defaultFont = activeResume?.templateFont || "helvetica";
+    doc.setFont(defaultFont, "normal");
 
     // Add Header (Personal Info)
     if (activeResume?.personalInfo) {
       // Name (centered, bold, large)
       doc.setFontSize(16);
-      doc.setFont(undefined, "bold");
+      doc.setFont(defaultFont, "bold");
       const fullName = `${activeResume.personalInfo.firstName || ""} ${activeResume.personalInfo.lastName || ""}`.trim();
-      addWrappedText(fullName || "Name", margin, 16, maxWidth, 'center');
+      yOffset = addWrappedText(fullName || "Name", margin, 16, maxWidth, 'center');
       yOffset += 4;
+
+      // Job Title (centered, bold)
+      if (activeResume.personalInfo.jobTitle) {
+        doc.setFontSize(12);
+        doc.setFont(defaultFont, "bold");
+        yOffset = addWrappedText(activeResume.personalInfo.jobTitle, margin, 12, maxWidth, 'center');
+        yOffset += 4;
+      }
 
       // Contact Info (single line, centered)
       doc.setFontSize(10);
-      doc.setFont(undefined, "normal");
+      doc.setFont(defaultFont, "normal");
       const contactParts = [
         activeResume.personalInfo.phone || "",
         activeResume.personalInfo.email || "",
         activeResume.personalInfo.linkedIn ? `linkedin.com/in/${activeResume.personalInfo.linkedIn}` : "",
         activeResume.personalInfo.github ? `github.com/${activeResume.personalInfo.github}` : "",
+        activeResume.personalInfo.website || "",
       ].filter(Boolean);
       const contactText = contactParts.join(" | ");
-      addWrappedText(contactText || "No contact info", margin, 10, maxWidth, 'center');
+      yOffset = addWrappedText(contactText || "No contact info", margin, 10, maxWidth, 'center');
       yOffset += 8;
     }
 
@@ -111,96 +160,100 @@ export default function ResumeBuilder() {
     if (activeResume?.personalInfo?.summary) {
       checkPageOverflow(20);
       doc.setFontSize(12);
-      doc.setFont(undefined, "bold");
+      doc.setFont(defaultFont, "bold");
       doc.setTextColor(activeResume?.templateColor || "#000000");
-      addWrappedText("Summary", margin, 12, maxWidth);
+      yOffset = addWrappedText("Summary", margin, 12, maxWidth);
       doc.setTextColor(0, 0, 0);
-      doc.setFont(undefined, "normal");
+      doc.setFont(defaultFont, "normal");
       yOffset += 4;
-      addWrappedText(activeResume.personalInfo.summary, margin, 10, maxWidth);
+      yOffset = addWrappedText(activeResume.personalInfo.summary, margin, 10, maxWidth);
       yOffset += 8;
     }
 
     // Add Experience
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Experience", margin, 12, maxWidth);
+    yOffset = addWrappedText("Experience", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.experiences?.length) {
       activeResume.experiences.forEach((exp) => {
         checkPageOverflow(40);
         doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
-        addWrappedText(`${exp.position || "Position"} at ${exp.company || "Company"}`, margin, 11, maxWidth);
-        doc.setFont(undefined, "normal");
+        doc.setFont(defaultFont, "bold");
+        yOffset = addWrappedText(`${exp.position || "Position"} at ${exp.company || "Company"}`, margin, 11, maxWidth);
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
         const dateText = exp.current ? `${exp.startDate || "Start"} - Present` : `${exp.startDate || "Start"} - ${exp.endDate || "End"}`;
-        addWrappedText(dateText, margin, 10, maxWidth);
+        yOffset = addWrappedText(dateText, margin, 10, maxWidth);
         yOffset += 2;
         if (exp.location) {
-          addWrappedText(exp.location, margin, 10, maxWidth);
+          yOffset = addWrappedText(exp.location, margin, 10, maxWidth);
           yOffset += 2;
         }
         if (exp.description) {
-          addWrappedText(exp.description, margin, 10, maxWidth);
+          yOffset = addWrappedText(exp.description, margin, 10, maxWidth);
           yOffset += 2;
         }
         if (exp.highlights?.length) {
           exp.highlights.forEach((highlight) => {
             checkPageOverflow(10);
-            addWrappedText(`• ${highlight}`, margin + 5, 10, maxWidth - 5);
+            yOffset = addWrappedText(`• ${highlight}`, margin + 5, 10, maxWidth - 5);
             yOffset += 2;
           });
         }
         yOffset += 4;
       });
     } else {
-      addWrappedText("No experience listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No experience listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
     // Add Education
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Education", margin, 12, maxWidth);
+    yOffset = addWrappedText("Education", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.education?.length) {
       activeResume.education.forEach((edu) => {
         checkPageOverflow(20);
         doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
-        addWrappedText(edu.institution || "Institution", margin, 11, maxWidth);
-        doc.setFont(undefined, "normal");
+        doc.setFont(defaultFont, "bold");
+        yOffset = addWrappedText(edu.institution || "Institution", margin, 11, maxWidth);
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
         const degreeLine = `${edu.degree || "Degree"}${edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}`;
-        addWrappedText(degreeLine, margin, 10, maxWidth);
+        yOffset = addWrappedText(degreeLine, margin, 10, maxWidth);
         yOffset += 2;
-        addWrappedText(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, margin, 10, maxWidth);
+        yOffset = addWrappedText(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, margin, 10, maxWidth);
+        if (edu.location) {
+          yOffset = addWrappedText(edu.location, margin, 10, maxWidth);
+          yOffset += 2;
+        }
         yOffset += 4;
       });
     } else {
-      addWrappedText("No education listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No education listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
     // Add Skills
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Technical Skills", margin, 12, maxWidth);
+    yOffset = addWrappedText("Technical Skills", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.skills?.length) {
@@ -215,96 +268,111 @@ export default function ResumeBuilder() {
       Object.entries(skillsByCategory).forEach(([category, skills]) => {
         checkPageOverflow(15);
         doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
-        addWrappedText(category, margin, 11, maxWidth);
-        doc.setFont(undefined, "normal");
+        doc.setFont(defaultFont, "bold");
+        yOffset = addWrappedText(category, margin, 11, maxWidth);
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
         const skillsText = skills.map((skill) => skill.name).join(", ");
-        addWrappedText(skillsText || "No skills listed", margin, 10, maxWidth);
+        yOffset = addWrappedText(skillsText || "No skills listed", margin, 10, maxWidth);
         yOffset += 4;
       });
     } else {
-      addWrappedText("No skills listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No skills listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
     // Add Projects
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Projects", margin, 12, maxWidth);
+    yOffset = addWrappedText("Projects", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.projects?.length) {
       activeResume.projects.forEach((project) => {
         checkPageOverflow(30);
         doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
+        doc.setFont(defaultFont, "bold");
         const projectLine = `${project.name || "Project"} ${project.technologies?.length ? `(${project.technologies.join(", ")})` : ""}`;
-        addWrappedText(projectLine, margin, 11, maxWidth);
-        doc.setFont(undefined, "normal");
+        yOffset = addWrappedText(projectLine, margin, 11, maxWidth);
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
         if (project.description) {
-          addWrappedText(project.description, margin, 10, maxWidth);
+          yOffset = addWrappedText(project.description, margin, 10, maxWidth);
           yOffset += 2;
         }
         if (project.url) {
-          addWrappedText(`URL: ${project.url}`, margin, 10, maxWidth);
+          yOffset = addWrappedText(`URL: ${project.url}`, margin, 10, maxWidth);
           yOffset += 2;
         }
         yOffset += 4;
       });
     } else {
-      addWrappedText("No projects listed", margin, 10, maxWidth);
-      yOffset += 8;
+      // Add AI-Resume Builder as a default project
+      checkPageOverflow(30);
+      doc.setFontSize(11);
+      doc.setFont(defaultFont, "bold");
+      const projectLine = "AI-Powered Resume Builder (Beta) (Next.js, React, TypeScript, Tailwind CSS, jsPDF)";
+      yOffset = addWrappedText(projectLine, margin, 11, maxWidth);
+      doc.setFont(defaultFont, "normal");
+      yOffset += 2;
+      yOffset = addWrappedText(
+        "A full-stack web application for creating professional resumes with AI-driven suggestions, real-time previews, and PDF exports. Features a responsive design, form validation, and modern UI, currently in beta for user feedback.",
+        margin,
+        10,
+        maxWidth
+      );
+      yOffset += 2;
+      yOffset = addWrappedText("URL: https://github.com/JuniorSillo/AI-Resume-Builder", margin, 10, maxWidth);
+      yOffset += 4;
     }
 
     // Add Certifications
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Certifications", margin, 12, maxWidth);
+    yOffset = addWrappedText("Certifications", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.certificates?.length) {
       activeResume.certificates.forEach((cert) => {
         checkPageOverflow(20);
         doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
-        addWrappedText(`${cert.name || "Certificate"} - ${cert.issuer || "Issuer"}`, margin, 11, maxWidth);
-        doc.setFont(undefined, "normal");
+        doc.setFont(defaultFont, "bold");
+        yOffset = addWrappedText(`${cert.name || "Certificate"} - ${cert.issuer || "Issuer"}`, margin, 11, maxWidth);
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        addWrappedText(`Issued: ${cert.issueDate || "Unknown"}`, margin, 10, maxWidth);
+        yOffset = addWrappedText(`Issued: ${cert.issueDate || "Unknown"}`, margin, 10, maxWidth);
         yOffset += 4;
       });
     } else {
-      addWrappedText("No certifications listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No certifications listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
     // Add Languages
     checkPageOverflow(20);
     doc.setFontSize(12);
-    doc.setFont(undefined, "bold");
+    doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    addWrappedText("Languages", margin, 12, maxWidth);
+    yOffset = addWrappedText("Languages", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
-    doc.setFont(undefined, "normal");
+    doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.languages?.length) {
       const languagesText = activeResume.languages
         .map((lang) => `${lang.name} (${lang.proficiency})`)
         .join(", ");
-      addWrappedText(languagesText || "No languages listed", margin, 10, maxWidth);
+      yOffset = addWrappedText(languagesText || "No languages listed", margin, 10, maxWidth);
     } else {
-      addWrappedText("No languages listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No languages listed", margin, 10, maxWidth);
     }
     yOffset += 8;
 
