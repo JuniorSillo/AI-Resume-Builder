@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
-import { Header } from "./Header";
+import Header from "./Header";
 import { Footer } from "./Footer";
 import { ThemeProvider } from "@/lib/ThemeProvider";
 import { Toaster } from "sonner";
@@ -12,7 +12,12 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <ThemeProvider>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       <div className="flex flex-col min-h-screen">
         <Header />
         <main className="flex-grow pt-16">{children}</main>
