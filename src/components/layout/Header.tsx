@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAppStore } from "@/lib/store";
 
-export function Header() {
+export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userEmail = useAppStore((state) => state.userEmail);
@@ -178,7 +178,8 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-          </div>
+          </nav>
+        </div>
       )}
     </header>
   );
