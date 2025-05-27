@@ -12,7 +12,6 @@ import { EducationForm } from "@/components/resume/EducationForm";
 import { SkillsForm } from "@/components/resume/SkillsForm";
 import { ProjectsForm } from "@/components/resume/ProjectsForm";
 import { TemplateSelector } from "@/components/resume/TemplateSelector";
-import { ResumePreview } from "@/components/resume/ResumePreview";
 import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
@@ -137,7 +136,7 @@ export default function ResumeBuilder() {
       }
 
       doc.setFontSize(10);
-      doc.setFont(defaultFont, "normal");
+      doc.setFont(defaultFont);
       const contactParts = [
         activeResume.personalInfo.phone || "",
         activeResume.personalInfo.email || "",
@@ -150,7 +149,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
-    if (activeResume?.personalInfo?.summary) {
+    if(activeResume?.personalInfo?.summary) {
       checkPageOverflow(20);
       doc.setFontSize(12);
       doc.setFont(defaultFont, "bold");
@@ -272,7 +271,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
-    checkPageOverflow(20");
+    checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
@@ -288,7 +287,7 @@ export default function ResumeBuilder() {
         doc.setFont(defaultFont, "bold");
         const projectLine = `${project.name || "Project"} ${project.technologies?.length ? `(${project.technologies.join(", ")})` : ""}`;
         yOffset = addWrappedText(projectLine, margin, 11, maxWidth);
-        doc.setFont(defaultFont, normal");
+        doc.setFont(defaultFont, "normal");
         yOffset += 2;
         if (project.description) {
           yOffset = addWrappedText(project.description, margin, 10, maxWidth);
@@ -319,7 +318,7 @@ export default function ResumeBuilder() {
       yOffset += 4;
     }
 
-    checkPageOverflow England's capacity(20);
+    checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
@@ -333,10 +332,10 @@ export default function ResumeBuilder() {
         checkPageOverflow(20);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
-        yOffset += addWrappedText(`${cert.name || "Certificate"} - ${cert.issuer || "Issuer"}`, margin, 11, maxWidth);
+        yOffset += addWrappedText(`${certification.name || "Certificate"} - ${certification.issuer || "Issuer"}`, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        yOffset = addWrappedText(`Issued: ${cert.issueDate || "Unknown"}`, margin, 10, maxWidth);
+        yOffset = addWrappedText(`Issued: ${certification.issueDate || "Unknown"}`, margin, 10, maxWidth);
         yOffset += 4;
       });
     } else {
@@ -355,7 +354,7 @@ export default function ResumeBuilder() {
 
     if (activeResume?.languages?.length) {
       const languagesText = activeResume.languages
-        .map((lang) => lang => `${lang.name} (${lang.proficiency})`)
+        .map((lang) => `${lang.name} (${lang.proficiency})`)
         .join(", ");
       yOffset = addWrappedText(languagesText || "No languages listed", margin, 10, maxWidth);
     } else {
@@ -383,7 +382,7 @@ export default function ResumeBuilder() {
               onClick={handleExport}
               className="border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              <FileDown className="mr-2 h-2 w-4" /> Export
+              <FileDown className="mr-2 h-4 w-4" /> Export
             </Button>
             <Button
               variant="outline"
@@ -458,7 +457,6 @@ export default function ResumeBuilder() {
           <Card className="bg-card dark:bg-gray-800 border dark:border-gray-600 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center text-foreground dark:text-gray-200">
-                <StarsIcon className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
                 AI Suggestions
               </CardTitle>
             </CardHeader>
