@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
-import { ArrowLeft, ArrowRight, FileDown, Eye, Share } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileDown, Eye, Share, StarIcon } from "lucide-react";
 import { PersonalInfoForm } from "@/components/resume/PersonalInfoForm";
 import { ExperienceForm } from "@/components/resume/ExperienceForm";
 import { EducationForm } from "@/components/resume/EducationForm";
@@ -13,6 +13,7 @@ import { SkillsForm } from "@/components/resume/SkillsForm";
 import { ProjectsForm } from "@/components/resume/ProjectsForm";
 import { TemplateSelector } from "@/components/resume/TemplateSelector";
 import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
+import { ResumePreview } from "@/components/resume/ResumePreview";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import { Resume } from "@/lib/types";
@@ -136,7 +137,7 @@ export default function ResumeBuilder() {
       }
 
       doc.setFontSize(10);
-      doc.setFont(defaultFont);
+      doc.setFont(defaultFont, "normal");
       const contactParts = [
         activeResume.personalInfo.phone || "",
         activeResume.personalInfo.email || "",
@@ -149,7 +150,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
-    if(activeResume?.personalInfo?.summary) {
+    if (activeResume?.personalInfo?.summary) {
       checkPageOverflow(20);
       doc.setFontSize(12);
       doc.setFont(defaultFont, "bold");
@@ -222,12 +223,12 @@ export default function ResumeBuilder() {
         yOffset = addWrappedText(edu.institution || "Institution", margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        const degreeLine = `${edu.degree || "Degree"}${edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}`;
+        const degreeLine = `${edu.degree || "Degree"} ${edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}`;
         yOffset = addWrappedText(degreeLine, margin, 10, maxWidth);
         yOffset += 2;
         yOffset = addWrappedText(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, margin, 10, maxWidth);
         if (edu.location) {
-          yOffset = addWrappedText(edu.location, margin, 10, maxWidth);
+          yOffset += addWrappedText(edu.location, margin, 10, maxWidth);
           yOffset += 2;
         }
         yOffset += 4;
@@ -247,7 +248,7 @@ export default function ResumeBuilder() {
     yOffset += 4;
 
     if (activeResume?.skills?.length) {
-      const skillsByCategory = {};
+      const skillsByCategory: { [key: string]: any[] } = {};
       activeResume.skills.forEach((skill) => {
         const category = skill.category || "Other";
         if (!skillsByCategory[category]) {
@@ -255,14 +256,14 @@ export default function ResumeBuilder() {
         }
         skillsByCategory[category].push(skill);
       });
-      Object.entries(skillsByCategory).forEach(([category, skills]) => {
+      Object.entries(skillsByCategory).forEach(([category, skills) => {
         checkPageOverflow(15);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
         yOffset += addWrappedText(category, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        const skillsText = skills.map((skill) => skill.name).join(", ");
+        const skillsText = skills.map((skill: any) => skill.name).join(", ");
         yOffset = addWrappedText(skillsText || "No skills listed", margin, 10, maxWidth);
         yOffset += 4;
       });
@@ -354,7 +355,7 @@ export default function ResumeBuilder() {
 
     if (activeResume?.languages?.length) {
       const languagesText = activeResume.languages
-        .map((lang) => `${lang.name} (${lang.proficiency})`)
+        .map((lang) => `${lang.name || "Language"} (${lang.proficiency || "Unknown"})`)
         .join(", ");
       yOffset = addWrappedText(languagesText || "No languages listed", margin, 10, maxWidth);
     } else {
@@ -457,6 +458,7 @@ export default function ResumeBuilder() {
           <Card className="bg-card dark:bg-gray-800 border dark:border-gray-600 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center text-foreground dark:text-gray-200">
+                <StarIcon className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
                 AI Suggestions
               </CardTitle>
             </CardHeader>
