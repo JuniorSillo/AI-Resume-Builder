@@ -228,7 +228,7 @@ export default function ResumeBuilder() {
         yOffset += 2;
         yOffset = addWrappedText(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, margin, 10, maxWidth);
         if (edu.location) {
-          yOffset += addWrappedText(edu.location, margin, 10, maxWidth);
+          yOffset = addWrappedText(edu.location, margin, 10, maxWidth);
           yOffset += 2;
         }
         yOffset += 4;
@@ -256,11 +256,11 @@ export default function ResumeBuilder() {
         }
         skillsByCategory[category].push(skill);
       });
-      Object.entries(skillsByCategory).forEach(([category, skills) => {
+      Object.entries(skillsByCategory).forEach(([category, skills]) => {
         checkPageOverflow(15);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
-        yOffset += addWrappedText(category, margin, 11, maxWidth);
+        yOffset = addWrappedText(category, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
         const skillsText = skills.map((skill: any) => skill.name).join(", ");
@@ -333,7 +333,7 @@ export default function ResumeBuilder() {
         checkPageOverflow(20);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
-        yOffset += addWrappedText(`${certification.name || "Certificate"} - ${certification.issuer || "Issuer"}`, margin, 11, maxWidth);
+        yOffset = addWrappedText(`${certification.name || "Certificate"} - ${certification.issuer || "Issuer"}`, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
         yOffset = addWrappedText(`Issued: ${certification.issueDate || "Unknown"}`, margin, 10, maxWidth);
@@ -497,10 +497,10 @@ export default function ResumeBuilder() {
             <CardFooter>
               <Button
                 variant="outline"
-                className="w-full text-sm border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full text-sm border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => setPreviewMode(true)}
               >
-                <Eye className="mr-2 h-4 w-4" /> Preview Resume
+                <Eye className="mr-2 h-4 w-25 w-4" /> Preview Resume
               </Button>
             </CardFooter>
           </Card>
@@ -510,26 +510,25 @@ export default function ResumeBuilder() {
               <CardTitle className="text-base text-foreground dark:text-gray-200">
                 Resume Completion
               </CardTitle>
-            </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {tabs.map((tab, index) => (
                   <div key={tab.id} className="flex items-center">
                     <div
-                      className={`w-5 h-5 rounded-full mr-2 flex items-center justify-center ${
-                        index <= currentTabIndex
+                      className="w-5 h-5 rounded-full mr-2 flex items-center justify-center"
+                        ${index <= currentTabIndex
                           ? "bg-green-500 text-white"
                           : "bg-gray-200 dark:bg-gray-600 text-muted-foreground dark:text-gray-400"
-                      }`}
+                            }`
                     >
                       {index < currentTabIndex ? "✓" : index + 1}
                     </div>
                     <span
-                      className={`text-sm ${
-                        index === currentTabIndex
-                          ? "font-medium text-foreground dark:text-gray-100"
-                          : "text-muted-foreground dark:text-gray-400"
-                      }`}
+                      className="text-sm"
+                      ${index === currentTabIndex
+                        ? "font-medium text-foreground dark:text-gray-100"
+                        : "text-muted-foreground dark:text-gray-400"
+                        }`
                     >
                       {tab.label}
                     </span>
