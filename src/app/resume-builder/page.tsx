@@ -18,6 +18,11 @@ import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
 import { Resume } from "@/lib/types";
 
+interface Skill {
+  name: string;
+  category?: string;
+}
+
 export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState("personal-info");
   const [previewMode, setPreviewMode] = useState(false);
@@ -248,7 +253,7 @@ export default function ResumeBuilder() {
     yOffset += 4;
 
     if (activeResume?.skills?.length) {
-      const skillsByCategory: { [key: string]: any[] } = {};
+      const skillsByCategory: { [key: string]: Skill[] } = {};
       activeResume.skills.forEach((skill) => {
         const category = skill.category || "Other";
         if (!skillsByCategory[category]) {
@@ -263,7 +268,7 @@ export default function ResumeBuilder() {
         yOffset = addWrappedText(category, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        const skillsText = skills.map((skill: any) => skill.name).join(", ");
+        const skillsText = skills.map((skill: Skill) => skill.name).join(", ");
         yOffset = addWrappedText(skillsText || "No skills listed", margin, 10, maxWidth);
         yOffset += 4;
       });
