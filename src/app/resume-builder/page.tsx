@@ -328,24 +328,24 @@ export default function ResumeBuilder() {
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    yOffset = addWrappedText("Certifications", margin, 12, maxWidth);
+    yOffset = addWrappedText("Certificates", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
     doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
-    if (activeResume?.certifications?.length) {
-      activeResume.certifications.forEach((certification) => {
+    if (activeResume?.certificates?.length) {
+      activeResume.certificates.forEach((certificate) => {
         checkPageOverflow(20);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
-        yOffset = addWrappedText(`${certification.name || "Certificate"} - ${certification.issuer || "Issuer"}`, margin, 11, maxWidth);
+        yOffset = addWrappedText(`${certificate.name || "Certificate"} - ${certificate.issuer || "Issuer"}`, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        yOffset = addWrappedText(`Issued: ${certification.issueDate || "Unknown"}`, margin, 10, maxWidth);
+        yOffset = addWrappedText(`Issued: ${certificate.issueDate || "Unknown"}`, margin, 10, maxWidth);
         yOffset += 4;
       });
     } else {
-      yOffset = addWrappedText("No certifications listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No certificates listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
@@ -502,7 +502,7 @@ export default function ResumeBuilder() {
             <CardFooter>
               <Button
                 variant="outline"
-                className="w-full text-sm border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 onClick={() => setPreviewMode(true)}
               >
                 <Eye className="mr-2 h-4 w-4" /> Preview Resume
@@ -510,7 +510,7 @@ export default function ResumeBuilder() {
             </CardFooter>
           </Card>
 
-          <Card className="mt-4 bg-card dark:bg-gray-800 border dark:border-gray-600">
+          <Card className="mt-4 rounded-lg bg-gray-100 dark:bg-gray-800 border dark:border-gray-600">
             <CardHeader>
               <CardTitle className="text-base text-foreground dark:text-gray-200">
                 Resume Completion
@@ -521,19 +521,19 @@ export default function ResumeBuilder() {
                 {tabs.map((tab, index) => (
                   <div key={tab.id} className="flex items-center">
                     <div
-                      className={`w-5 h-5 rounded-full mr-2 flex items-center justify-center ${
+                      className={`w-4 h-4 rounded items-center justify-center flex mr-3 ${
                         index <= currentTabIndex
-                          ? "bg-green-500 text-white"
-                          : "bg-gray-200 dark:bg-gray-600 text-muted-foreground dark:text-gray-400"
+                          ? "bg-green-600 dark:bg-green-700 text-white"
+                          : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
                       }`}
                     >
                       {index < currentTabIndex ? "✓" : index + 1}
                     </div>
                     <span
-                      className={`text-sm ${
+                      className={`text-sm font-medium ${
                         index === currentTabIndex
-                          ? "font-medium text-foreground dark:text-gray-100"
-                          : "text-muted-foreground dark:text-gray-400"
+                          ? "text-foreground dark:text-gray-100"
+                          : "text-gray-700 dark:text-gray-400"
                       }`}
                     >
                       {tab.label}
