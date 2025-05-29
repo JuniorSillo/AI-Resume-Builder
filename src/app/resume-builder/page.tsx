@@ -5,23 +5,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppStore } from "@/lib/store";
-import { ArrowLeft, ArrowRight, FileDown, Eye, Share, StarIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileDown, Eye, Share2, Stars } from "lucide-react";
 import { PersonalInfoForm } from "@/components/resume/PersonalInfoForm";
 import { ExperienceForm } from "@/components/resume/ExperienceForm";
 import { EducationForm } from "@/components/resume/EducationForm";
 import { SkillsForm } from "@/components/resume/SkillsForm";
 import { ProjectsForm } from "@/components/resume/ProjectsForm";
 import { TemplateSelector } from "@/components/resume/TemplateSelector";
-import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { ResumePreview } from "@/components/resume/ResumePreview";
+import { ResumeAnalysis } from "@/components/resume/ResumeAnalysis";
 import { useRouter } from "next/navigation";
 import jsPDF from "jspdf";
-import { Resume } from "@/lib/types";
-
-interface Skill {
-  name: string;
-  category?: string;
-}
+import { Resume, PersonalInfo, Experience, Education, Skill, Project, Certificate, Language } from "@/lib/types";
 
 export default function ResumeBuilder() {
   const [activeTab, setActiveTab] = useState("personal-info");
@@ -66,18 +61,20 @@ export default function ResumeBuilder() {
     const maxWidth = pageWidth - 2 * margin;
     let yOffset = margin;
 
+    // Helper function to clean text (fix OCR errors)
     const cleanText = (text: string): string => {
       return text
-        .replace(/\$(\d+%)\$/g, "$1")
-        .replace(/\$\\mathrm{(.*)}\//g, "$1/")
-        .replace(/linkedin\.com\/in\/linkedin\.com\/in\//g, "linkedin.com/in/")
-        .replace(/Though\s+the\s+migration[\s\S]*?(?=- Led a team)/, "")
-        .replace(/metics/g, "metrics")
-        .replace(/resident/i, "Frontend")
-        .replace(/dected/, "Reduced")
+        .replace(/\$(\d+%)\$/g, "$1") // Fix $35% → 35%
+        .replace(/\$\\mathrm{(.*)}\//g, "$1/") // Fix $\mathrm{Cl} / \mathrm{CD}$ → CI/CD
+        .replace(/linkedin\.com\/in\/linkedin\.com\/in\//g, "linkedin.com/in/") // Fix LinkedIn URL
+        .replace(/Though\s+the\s+migration[\s\S]*?(?=- Led a team)/, "") // Remove duplicate text
+        .replace(/metics/g, "metrics") // Fix metrics
+        .replace(/residented/i, "Frontend") // Fix residented → Frontend
+        .replace(/dected/, "Reduced") // Fix dedected → Reduced
         .trim();
     };
 
+    // Helper function to check for page overflow
     const checkPageOverflow = (additionalHeight: number) => {
       if (yOffset + additionalHeight > pageHeight - margin) {
         doc.addPage();
@@ -85,15 +82,17 @@ export default function ResumeBuilder() {
       }
     };
 
+    // Helper function to add wrapped text with overflow handling
     const addWrappedText = (text: string, x: number, fontSize: number, maxWidth: number, align: 'left' | 'center' = 'left') => {
       doc.setFontSize(fontSize);
       const cleanedText = cleanText(text);
       const lines = doc.splitTextToSize(cleanedText, maxWidth);
-      const lineHeight = fontSize * 0.35;
+      const lineHeight = fontSize * 0.35; // Adjusted for better readability
       lines.forEach((line: string) => {
         checkPageOverflow(lineHeight);
         const lineWidth = doc.getTextWidth(line);
         if (lineWidth > maxWidth) {
+          // Split long lines further
           const words = line.split(" ");
           let currentLine = "";
           words.forEach((word) => {
@@ -124,16 +123,20 @@ export default function ResumeBuilder() {
       return yOffset;
     };
 
+    // Set default font
     const defaultFont = activeResume?.templateFont || "helvetica";
     doc.setFont(defaultFont, "normal");
 
+    // Add Header (Personal Info)
     if (activeResume?.personalInfo) {
+      // Name (centered, bold, large)
       doc.setFontSize(16);
       doc.setFont(defaultFont, "bold");
       const fullName = `${activeResume.personalInfo.firstName || ""} ${activeResume.personalInfo.lastName || ""}`.trim();
       yOffset = addWrappedText(fullName || "Name", margin, 16, maxWidth, 'center');
       yOffset += 4;
 
+      // Job Title (centered, bold)
       if (activeResume.personalInfo.jobTitle) {
         doc.setFontSize(12);
         doc.setFont(defaultFont, "bold");
@@ -141,6 +144,7 @@ export default function ResumeBuilder() {
         yOffset += 4;
       }
 
+      // Contact Info (single line, centered)
       doc.setFontSize(10);
       doc.setFont(defaultFont, "normal");
       const contactParts = [
@@ -151,10 +155,11 @@ export default function ResumeBuilder() {
         activeResume.personalInfo.website || "",
       ].filter(Boolean);
       const contactText = contactParts.join(" | ");
-      yOffset = addWrappedText(contactText || "", margin, 10, maxWidth, 'center');
+      yOffset = addWrappedText(contactText || "No contact info", margin, 10, maxWidth, 'center');
       yOffset += 8;
     }
 
+    // Add Summary
     if (activeResume?.personalInfo?.summary) {
       checkPageOverflow(20);
       doc.setFontSize(12);
@@ -168,6 +173,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
+    // Add Experience
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
@@ -197,7 +203,7 @@ export default function ResumeBuilder() {
           yOffset += 2;
         }
         if (exp.highlights?.length) {
-          const uniqueHighlights = [...new Set(exp.highlights)];
+          const uniqueHighlights = [...new Set(exp.highlights)]; // Remove duplicates
           uniqueHighlights.forEach((highlight) => {
             checkPageOverflow(10);
             yOffset = addWrappedText(`• ${highlight}`, margin + 5, 10, maxWidth - 5);
@@ -211,6 +217,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
+    // Add Education
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
@@ -228,7 +235,7 @@ export default function ResumeBuilder() {
         yOffset = addWrappedText(edu.institution || "Institution", margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        const degreeLine = `${edu.degree || "Degree"} ${edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}`;
+        const degreeLine = `${edu.degree || "Degree"}${edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}`;
         yOffset = addWrappedText(degreeLine, margin, 10, maxWidth);
         yOffset += 2;
         yOffset = addWrappedText(`${edu.startDate || "Start"} - ${edu.endDate || "End"}`, margin, 10, maxWidth);
@@ -243,6 +250,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
+    // Add Skills
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
@@ -253,7 +261,7 @@ export default function ResumeBuilder() {
     yOffset += 4;
 
     if (activeResume?.skills?.length) {
-      const skillsByCategory: { [key: string]: Skill[] } = {};
+      const skillsByCategory: Record<string, Skill[]> = {};
       activeResume.skills.forEach((skill) => {
         const category = skill.category || "Other";
         if (!skillsByCategory[category]) {
@@ -268,7 +276,7 @@ export default function ResumeBuilder() {
         yOffset = addWrappedText(category, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        const skillsText = skills.map((skill: Skill) => skill.name).join(", ");
+        const skillsText = skills.map((skill) => skill.name).join(", ");
         yOffset = addWrappedText(skillsText || "No skills listed", margin, 10, maxWidth);
         yOffset += 4;
       });
@@ -277,6 +285,7 @@ export default function ResumeBuilder() {
       yOffset += 8;
     }
 
+    // Add Projects
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
@@ -306,6 +315,7 @@ export default function ResumeBuilder() {
         yOffset += 4;
       });
     } else {
+      // Add AI-Resume Builder as a default project
       checkPageOverflow(30);
       doc.setFontSize(11);
       doc.setFont(defaultFont, "bold");
@@ -314,7 +324,7 @@ export default function ResumeBuilder() {
       doc.setFont(defaultFont, "normal");
       yOffset += 2;
       yOffset = addWrappedText(
-        "A full-stack web application for creating professional resumes",
+        "A full-stack web application for creating professional resumes with AI-driven suggestions, real-time previews, and PDF exports. Features a responsive design, form validation, and modern UI, currently in beta for user feedback.",
         margin,
         10,
         maxWidth
@@ -324,31 +334,33 @@ export default function ResumeBuilder() {
       yOffset += 4;
     }
 
+    // Add Certifications
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
     doc.setTextColor(activeResume?.templateColor || "#000000");
-    yOffset = addWrappedText("Certificates", margin, 12, maxWidth);
+    yOffset = addWrappedText("Certifications", margin, 12, maxWidth);
     doc.setTextColor(0, 0, 0);
     doc.setFont(defaultFont, "normal");
     yOffset += 4;
 
     if (activeResume?.certificates?.length) {
-      activeResume.certificates.forEach((certificate) => {
+      activeResume.certificates.forEach((cert) => {
         checkPageOverflow(20);
         doc.setFontSize(11);
         doc.setFont(defaultFont, "bold");
-        yOffset = addWrappedText(`${certificate.name || "Certificate"} - ${certificate.issuer || "Issuer"}`, margin, 11, maxWidth);
+        yOffset = addWrappedText(`${cert.name || "Certificate"} - ${cert.issuer || "Issuer"}`, margin, 11, maxWidth);
         doc.setFont(defaultFont, "normal");
         yOffset += 2;
-        yOffset = addWrappedText(`Issued: ${certificate.issueDate || "Unknown"}`, margin, 10, maxWidth);
+        yOffset = addWrappedText(`Issued: ${cert.issueDate || "Unknown"}`, margin, 10, maxWidth);
         yOffset += 4;
       });
     } else {
-      yOffset = addWrappedText("No certificates listed", margin, 10, maxWidth);
+      yOffset = addWrappedText("No certifications listed", margin, 10, maxWidth);
       yOffset += 8;
     }
 
+    // Add Languages
     checkPageOverflow(20);
     doc.setFontSize(12);
     doc.setFont(defaultFont, "bold");
@@ -360,7 +372,7 @@ export default function ResumeBuilder() {
 
     if (activeResume?.languages?.length) {
       const languagesText = activeResume.languages
-        .map((lang) => `${lang.name || "Language"} (${lang.proficiency || "Unknown"})`)
+        .map((lang) => `${lang.name} (${lang.proficiency})`)
         .join(", ");
       yOffset = addWrappedText(languagesText || "No languages listed", margin, 10, maxWidth);
     } else {
@@ -368,37 +380,27 @@ export default function ResumeBuilder() {
     }
     yOffset += 8;
 
+    // Save the PDF
     doc.save(`${activeResume?.title || "resume"}.pdf`);
   };
 
   if (previewMode) {
     return (
-      <div className="container mx-auto px-4 py-10 bg-background dark:bg-gray-900">
+      <div className="container mx-auto px-4 py-10">
         <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="outline"
-            onClick={() => setPreviewMode(false)}
-            className="border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
+          <Button variant="outline" onClick={() => setPreviewMode(false)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Editor
           </Button>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              className="border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
+            <Button variant="outline" onClick={handleExport}>
               <FileDown className="mr-2 h-4 w-4" /> Export
             </Button>
-            <Button
-              variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Share className="mr-2 h-4 w-4" /> Share
+            <Button variant="outline">
+              <Share2 className="mr-2 h-4 w-4" /> Share
             </Button>
           </div>
         </div>
-        <div className="bg-card dark:bg-gray-800 rounded-lg shadow-lg">
+        <div className="bg-card rounded-lg shadow-lg overflow-hidden">
           <ResumePreview />
         </div>
       </div>
@@ -406,27 +408,23 @@ export default function ResumeBuilder() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 bg-background dark:bg-gray-900">
+    <div className="container mx-auto px-4 py-10">
       <div className="flex flex-col md:flex-row gap-8">
         <div className="w-full md:w-3/4">
-          <Card className="bg-card dark:bg-gray-800 border dark:border-gray-600">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-2xl text-foreground dark:text-gray-100">
+              <CardTitle className="text-2xl">
                 {activeResume?.title || "My Resume"}
               </CardTitle>
-              <CardDescription className="text-muted-foreground dark:text-gray-400">
+              <CardDescription>
                 Complete each section to create your professional resume
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="mb-8 w-full max-w-full overflow-auto grid grid-cols-3 md:grid-cols-7 bg-gray-200 dark:bg-gray-700">
+                <TabsList className="mb-8 w-full max-w-full overflow-auto grid grid-cols-3 md:grid-cols-7">
                   {tabs.map((tab) => (
-                    <TabsTrigger
-                      key={tab.id}
-                      value={tab.id}
-                      className="px-3 py-2 text-foreground dark:text-gray-300 data-[state=active]:bg-background dark:data-[state=active]:bg-gray-800 data-[state=active]:text-foreground dark:data-[state=active]:text-gray-100"
-                    >
+                    <TabsTrigger key={tab.id} value={tab.id} className="px-3 py-2">
                       {tab.label}
                     </TabsTrigger>
                   ))}
@@ -444,14 +442,10 @@ export default function ResumeBuilder() {
                 variant="outline"
                 onClick={handlePrevious}
                 disabled={currentTabIndex === 0}
-                className="border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Previous
               </Button>
-              <Button
-                onClick={handleNext}
-                className="bg-primary dark:bg-primary/90 text-white dark:text-gray-100 hover:bg-primary/90 dark:hover:bg-primary/80"
-              >
+              <Button onClick={handleNext}>
                 {currentTabIndex === tabs.length - 1 ? "Preview" : "Next"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -460,80 +454,68 @@ export default function ResumeBuilder() {
         </div>
 
         <div className="w-full md:w-1/4">
-          <Card className="bg-card dark:bg-gray-800 border dark:border-gray-600 shadow-lg">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center text-foreground dark:text-gray-200">
-                <StarIcon className="mr-2 h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <CardTitle className="flex items-center">
+                <Stars className="mr-2 h-5 w-5 text-blue-500" />
                 AI Suggestions
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Our AI assistant is analyzing your resume and has some suggestions:
               </p>
 
               <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <p className="text-sm font-medium text-foreground dark:text-gray-200">
-                    Add more quantifiable achievements
-                  </p>
-                  <p className="text-xs text-muted-foreground dark:text-gray-400">
+                <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-md">
+                  <p className="text-sm font-medium">Add more quantifiable achievements</p>
+                  <p className="text-xs text-muted-foreground">
                     Including specific metrics will make your resume stand out.
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <p className="text-sm font-medium text-foreground dark:text-gray-200">
-                    Consider adding certifications
-                  </p>
-                  <p className="text-xs text-muted-foreground dark:text-gray-400">
+
+                <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-md">
+                  <p className="text-sm font-medium">Consider adding certifications</p>
+                  <p className="text-xs text-muted-foreground">
                     Certifications can boost your credibility in your field.
                   </p>
                 </div>
-                <div className="p-3 rounded-md border border-blue-200 dark:border-blue-600 bg-blue-50 dark:bg-blue-950">
+
+                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-md border border-blue-200 dark:border-blue-900">
                   <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
                     Try the "Modern" template
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-500">
-                    Based on your data, this template has a 92% success rate.
+                    Based on your industry, this template has a 92% success rate.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button
-                variant="outline"
-                className="w-full text-sm rounded-lg border-gray-300 dark:border-gray-600 text-foreground dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => setPreviewMode(true)}
-              >
+              <Button variant="outline" className="w-full text-sm" onClick={() => setPreviewMode(true)}>
                 <Eye className="mr-2 h-4 w-4" /> Preview Resume
               </Button>
             </CardFooter>
           </Card>
 
-          <Card className="mt-4 rounded-lg bg-gray-100 dark:bg-gray-800 border dark:border-gray-600">
+          <Card className="mt-4">
             <CardHeader>
-              <CardTitle className="text-base text-foreground dark:text-gray-200">
-                Resume Completion
-              </CardTitle>
+              <CardTitle className="text-base">Resume Completion</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {tabs.map((tab, index) => (
                   <div key={tab.id} className="flex items-center">
                     <div
-                      className={`w-4 h-4 rounded items-center justify-center flex mr-3 ${
-                        index <= currentTabIndex
-                          ? "bg-green-600 dark:bg-green-700 text-white"
-                          : "bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400"
+                      className={`w-5 h-5 rounded-full mr-2 flex items-center justify-center ${
+                        index <= currentTabIndex ? "bg-green-500 text-white" : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {index < currentTabIndex ? "✓" : index + 1}
                     </div>
                     <span
-                      className={`text-sm font-medium ${
-                        index === currentTabIndex
-                          ? "text-foreground dark:text-gray-100"
-                          : "text-gray-700 dark:text-gray-400"
+                      className={`text-sm ${
+                        index === currentTabIndex ? "font-medium" : "text-muted-foreground"
                       }`}
                     >
                       {tab.label}
