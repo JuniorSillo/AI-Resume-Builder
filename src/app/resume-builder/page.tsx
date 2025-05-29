@@ -64,13 +64,10 @@ export default function ResumeBuilder() {
     // Helper function to clean text (fix OCR errors)
     const cleanText = (text: string): string => {
       return text
-        .replace(/\$(\d+%)\$/g, "$1") // Fix $35% → 35%
-        .replace(/\$\\mathrm{(.*)}\//g, "$1/") // Fix $\mathrm{Cl} / \mathrm{CD}$ → CI/CD
-        .replace(/linkedin\.com\/in\/linkedin\.com\/in\//g, "linkedin.com/in/") // Fix LinkedIn URL
-        .replace(/Though\s+the\s+migration[\s\S]*?(?=- Led a team)/, "") // Remove duplicate text
-        .replace(/metics/g, "metrics") // Fix metrics
-        .replace(/residented/i, "Frontend") // Fix residented → Frontend
-        .replace(/dected/, "Reduced") // Fix dedected → Reduced
+        .replace(/\$(\d+%)\$/g, "$1") // Fix $35%$ → 35%
+        .replace(/metics/g, "metrics") // Fix metics → metrics
+        .replace(/residented/g, "Frontend") // Fix residented → Frontend
+        .replace(/dected/g, "Reduced") // Fix dected → Reduced
         .trim();
     };
 
@@ -87,9 +84,9 @@ export default function ResumeBuilder() {
       doc.setFontSize(fontSize);
       const cleanedText = cleanText(text);
       const lines = doc.splitTextToSize(cleanedText, maxWidth);
-      const lineHeight = fontSize * 0.35; // Adjusted for better readability
+      const lineHeight = fontSize * 0.4;
+      checkPageOverflow(lines.length * lineHeight);
       lines.forEach((line: string) => {
-        checkPageOverflow(lineHeight);
         const lineWidth = doc.getTextWidth(line);
         if (lineWidth > maxWidth) {
           // Split long lines further
@@ -203,8 +200,7 @@ export default function ResumeBuilder() {
           yOffset += 2;
         }
         if (exp.highlights?.length) {
-          const uniqueHighlights = [...new Set(exp.highlights)]; // Remove duplicates
-          uniqueHighlights.forEach((highlight) => {
+          exp.highlights.forEach((highlight) => {
             checkPageOverflow(10);
             yOffset = addWrappedText(`• ${highlight}`, margin + 5, 10, maxWidth - 5);
             yOffset += 2;
